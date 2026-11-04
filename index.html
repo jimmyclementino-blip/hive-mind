@@ -1,0 +1,387 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta name="robots" content="noindex">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<meta name="referrer" content="no-referrer">
+<meta name="theme-color" content="#0b0f17">
+<title>HIVE//GRID v3</title>
+<link rel="icon" href="data:,">
+<!-- HIVE//GRID v3. Design: Emil Kowalski skill set (foundations, typography, color, surfaces, components, animations, polish, performance, touch/a11y, unslop).
+     Ideas borrowed: paper-design/shaders (static dot-grid + grain field, done in CSS, no WebGL), ibelick/motion-primitives (text-scramble on refresh, border-trail on the hold chip),
+     ui-layouts (bottom tab bar + sheet pattern). No frameworks, no build step. -->
+<style>
+:root{
+  --bg:oklch(0.15 0.02 255);--bg2:oklch(0.19 0.025 255);--bg3:oklch(0.23 0.03 255);
+  --line:oklch(0.32 0.03 255);--line2:oklch(0.42 0.04 255);
+  --tx:oklch(0.93 0.01 255);--tx2:oklch(0.76 0.02 255);--tx3:oklch(0.62 0.02 255);
+  --cy:oklch(0.86 0.14 195);--cyd:oklch(0.86 0.14 195 / 0.14);
+  --mg:oklch(0.72 0.2 350);--am:oklch(0.84 0.15 80);--amd:oklch(0.84 0.15 80 / 0.12);
+  --gn:oklch(0.83 0.17 150);--rd:oklch(0.7 0.19 25);
+  --mono:ui-monospace,"SF Mono","JetBrains Mono",Menlo,Consolas,monospace;
+  --sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --ease:cubic-bezier(.23,1,.32,1);--r:6px;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;color-scheme:dark}
+body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.45 var(--sans);min-height:100dvh;
+  background-image:radial-gradient(oklch(0.3 0.03 255 / .55) 1px,transparent 1px);background-size:22px 22px;
+  padding-bottom:calc(64px + env(safe-area-inset-bottom))}
+.num,.mono{font-family:var(--mono);font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+a{color:var(--cy)}
+button{font:inherit;color:inherit;touch-action:manipulation}
+:focus-visible{outline:2px solid var(--cy);outline-offset:2px}
+header{background:oklch(0.15 0.02 255 / .94);border-bottom:1px solid var(--line);padding:10px 14px calc(8px);padding-top:max(10px,env(safe-area-inset-top))}
+.brand{display:flex;align-items:center;gap:10px;justify-content:space-between}
+.logo{font:700 14px/1 var(--mono);letter-spacing:.18em;color:var(--cy)}
+.logo b{color:var(--mg)}
+.sync{font:12px var(--mono);color:var(--tx3);display:flex;gap:8px;align-items:center}
+.sync button{background:none;border:1px solid var(--line2);border-radius:var(--r);min-height:36px;min-width:44px;padding:0 10px;cursor:pointer}
+.kpis{display:grid;grid-template-columns:repeat(2,1fr);gap:6px;margin-top:10px}
+.k{background:var(--bg2);border:1px solid var(--line);border-radius:var(--r);padding:7px 9px;min-width:0}
+.k .l{font:11px var(--mono);color:var(--tx3);text-transform:uppercase;letter-spacing:.08em}
+.k .v{font:600 18px/1.25 var(--mono);font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.k .s{font:12px var(--mono);color:var(--tx2)}
+.k.hold{grid-column:1/-1;border-color:var(--am);background:var(--amd);display:flex;align-items:center;gap:10px}
+.k.hold .v{font-size:14px;color:var(--am);white-space:normal}
+.bar{height:4px;background:var(--bg3);border-radius:2px;margin-top:5px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--cy);transform-origin:left;transition:transform .4s var(--ease)}
+.up{color:var(--gn)}.dn{color:var(--rd)}.muted{color:var(--tx3)}
+main{padding:14px;max-width:1180px;margin:0 auto}
+.view{display:none}.view.on{display:block}
+h2{font:600 12px var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--tx2);margin:22px 0 8px;display:flex;justify-content:space-between;gap:8px}
+h2:first-child{margin-top:4px}
+h2 small{font-weight:400;color:var(--tx3);letter-spacing:.02em;text-transform:none}
+.card{background:var(--bg2);border:1px solid var(--line);border-radius:var(--r);padding:12px}
+.grid{display:grid;gap:10px}.grid>*{min-width:0}
+/* network */
+.net{position:relative}
+.net svg{width:100%;height:auto;display:block}
+.node{cursor:pointer}
+.node rect{fill:var(--bg2);stroke:var(--line2);stroke-width:1}
+.node text{font-family:var(--mono);fill:var(--tx)}
+.node .sub{fill:var(--tx3);font-size:10px}
+.link{stroke:var(--line2);stroke-width:1;stroke-dasharray:3 4}
+.link.active{stroke:var(--cy);animation:flow 1.6s linear infinite}
+@keyframes flow{to{stroke-dashoffset:-14}}
+.hub circle.ring{fill:none;stroke:var(--cy);stroke-width:1.2}
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--tx3);flex:none}
+.s-active,.s-green{--c:var(--gn)}.s-idle,.s-amber{--c:var(--am)}.s-blocked,.s-error,.s-red{--c:var(--rd)}.s-unknown{--c:var(--tx3)}
+.dot[class*=s-]{background:var(--c)}
+.pill{font:11px var(--mono);padding:2px 7px;border-radius:99px;border:1px solid var(--c,var(--line2));color:var(--c,var(--tx2));white-space:nowrap}
+.botlist{display:grid;grid-template-columns:minmax(0,1fr);gap:6px;margin-top:10px}.bot{min-width:0}.grid{grid-template-columns:minmax(0,1fr)}
+.bot{display:flex;align-items:center;gap:10px;background:var(--bg2);border:1px solid var(--line);border-radius:var(--r);padding:10px 12px;min-height:52px;cursor:pointer;text-align:left;width:100%}
+.bot .n{font-weight:600}.bot .t{font-size:13px;color:var(--tx2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bot>div{min-width:0;flex:1}
+.bot .go{color:var(--tx3);font-family:var(--mono)}
+.list{display:grid;gap:6px}
+.item{background:var(--bg2);border:1px solid var(--line);border-left:2px solid var(--am);border-radius:var(--r);padding:10px 12px}
+.item .f{font:11px var(--mono);color:var(--tx3);text-transform:uppercase;letter-spacing:.08em}
+.item p{margin:3px 0 0;color:var(--tx2);font-size:14px}
+/* tables */
+.tw{overflow-x:auto;border:1px solid var(--line);border-radius:var(--r);background:var(--bg2)}
+table{border-collapse:collapse;width:100%;font:13px var(--mono);font-variant-numeric:tabular-nums}
+th,td{padding:7px 9px;text-align:left;border-bottom:1px solid var(--line);white-space:nowrap}
+th{font-weight:500;color:var(--tx3);font-size:11px;text-transform:uppercase;letter-spacing:.06em;position:sticky;top:0;background:var(--bg2)}
+tr:last-child td{border-bottom:0}
+td.w{white-space:normal;min-width:220px;font-family:var(--sans);color:var(--tx2)}
+tr.click{cursor:pointer}
+.chart svg{width:100%;height:150px;display:block}
+.chart .ax{font:10px var(--mono);fill:var(--tx3)}
+.stats{display:grid;grid-template-columns:repeat(2,1fr);gap:6px}
+.stat{background:var(--bg2);border:1px solid var(--line);border-radius:var(--r);padding:8px 10px}
+.stat .l{font:11px var(--mono);color:var(--tx3);text-transform:uppercase}.stat .v{font:600 16px var(--mono);font-variant-numeric:tabular-nums}
+.filters{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
+.chip{background:var(--bg2);border:1px solid var(--line2);border-radius:99px;padding:0 14px;min-height:36px;cursor:pointer;font:12px var(--mono)}
+.chip[aria-pressed=true]{border-color:var(--cy);color:var(--cy);background:var(--cyd)}
+.chip:active,.bot:active,.sync button:active{transform:scale(.97)}
+.chip,.bot,.sync button{transition:transform .15s var(--ease),border-color .15s ease}
+.timeline{position:relative;height:34px;background:oklch(0.83 0.17 150 / .18);border-radius:3px;overflow:hidden}
+.timeline i{position:absolute;top:0;bottom:0;background:var(--rd);min-width:2px}
+.tlax{display:flex;justify-content:space-between;font:10px var(--mono);color:var(--tx3);margin-top:4px}
+.day{padding:10px 12px}
+.day summary{color:var(--cy);font-weight:600}.day h3{margin:0 0 6px;font:600 13px var(--mono);color:var(--cy)}
+.day ul{margin:0;padding-left:18px;color:var(--tx2);font-size:14px}.day li{margin:3px 0}
+.rule{padding:9px 12px;border-bottom:1px solid var(--line);font-size:14px}
+.rule:last-child{border:0}
+.rule b{font-family:var(--mono);color:var(--cy);font-weight:600;margin-right:6px}
+.rule .src{font:11px var(--mono);color:var(--tx3);margin-left:6px}
+pre.md{white-space:pre-wrap;font:12.5px/1.5 var(--mono);color:var(--tx2);margin:0;max-height:420px;overflow:auto}
+details summary{cursor:pointer;min-height:44px;display:flex;align-items:center;font:12px var(--mono);color:var(--tx2)}
+.banner{display:none;margin:0 0 12px;padding:10px 12px;border-radius:var(--r);font:13px var(--mono);border:1px solid}
+.banner.on{display:block}
+.banner.off{border-color:var(--am);color:var(--am);background:var(--amd)}
+.banner.exp{border-color:var(--rd);color:var(--rd);background:oklch(0.7 0.19 25 / .1)}
+nav.tabs{position:fixed;left:0;right:0;bottom:0;z-index:30;display:flex;background:oklch(0.13 0.02 255 / .97);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom);overflow-x:auto}
+nav.tabs a{flex:1 0 auto;min-width:56px;min-height:56px;display:flex;align-items:center;justify-content:center;font:11px var(--mono);letter-spacing:.06em;color:var(--tx3);text-decoration:none;text-transform:uppercase;padding:0 8px;touch-action:manipulation}
+nav.tabs a[aria-current=page]{color:var(--cy);box-shadow:inset 0 2px 0 var(--cy)}
+.empty{color:var(--tx3);font:13px var(--mono);padding:10px}
+@media (min-width:760px){
+  .kpis{grid-template-columns:2fr repeat(5,1fr)}.k.hold{grid-column:auto}
+  .two{grid-template-columns:1fr 1fr}.stats{grid-template-columns:repeat(4,1fr)}
+  nav.tabs{position:sticky;top:auto;bottom:auto}
+  body{padding-bottom:0}
+  nav.tabs{justify-content:center}nav.tabs a{flex:0 0 auto;min-height:44px}
+}
+@media (hover:hover) and (pointer:fine){
+  .bot:hover,.chip:hover{border-color:var(--cy)}
+  .node:hover rect{stroke:var(--cy)}
+  tr.click:hover td{background:var(--bg3)}
+  nav.tabs a:hover{color:var(--tx)}
+}
+@media (prefers-reduced-motion:reduce){
+  .link.active{animation:none}
+  *{transition-duration:.01ms!important}
+}
+</style>
+</head>
+<body>
+<div style="background:#223;color:#ccd;font:12px sans-serif;text-align:center;padding:4px">Static snapshot, updated every 15 min · last updated 2026-11-03 09:08 PM ET</div>
+<header>
+  <div class="brand">
+    <div class="logo" aria-label="Hive Grid">HIVE<b>//</b>GRID</div>
+    <div class="sync"><span id="sync" aria-live="polite">connecting…</span><button id="refresh" aria-label="Refresh data">↻</button></div>
+  </div>
+  <div class="kpis" id="kpis"></div>
+</header>
+<nav class="tabs" id="tabs" aria-label="Sections"></nav>
+<main>
+  <div class="banner" id="banner" role="status"></div>
+  <section class="view" id="v-overview"></section>
+  <section class="view" id="v-wst"></section>
+  <section class="view" id="v-kalshi"></section>
+  <section class="view" id="v-oracle"></section>
+  <section class="view" id="v-risk"></section>
+  <section class="view" id="v-feed"></section>
+  <section class="view" id="v-box"></section>
+</main>
+<script>
+(()=>{
+"use strict";
+const $=s=>document.querySelector(s);
+const TABS=[["overview","Grid"],["wst","WST"],["kalshi","Kalshi"],["oracle","Oracle"],["risk","Risk"],["feed","Feed"],["box","Box"]];
+const D="—";
+const esc=v=>v==null||v===""?D:String(v).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const num=v=>{const n=typeof v==="number"?v:parseFloat(v);return Number.isFinite(n)?n:null};
+const usd=(v,sign)=>{const n=num(v);if(n==null)return D;const s=Math.abs(n).toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2});return (n<0?"−$":(sign&&n>0?"+$":"$"))+s};
+const pct=v=>{const n=num(v);return n==null?D:(n>0?"+":"")+n.toFixed(1)+"%"};
+const cls=v=>{const n=num(v);return n==null?"":n>0?"up":n<0?"dn":""};
+/* ---- auth: ?k once -> session+local storage, stripped from URL ---- */
+const KEY="hg_k";
+try{const u=new URL(location.href),k=u.searchParams.get("k");
+  if(k){sessionStorage.setItem(KEY,k);localStorage.setItem(KEY,k);u.searchParams.delete("k");history.replaceState(null,"",u.pathname+u.search+u.hash)}}catch(e){}
+const tok=()=>{try{return sessionStorage.getItem(KEY)||localStorage.getItem(KEY)||""}catch(e){return""}};
+const LAST="hg3_last";
+let DATA=null,state="init",lastOk=null;
+function banner(kind,html){const b=$("#banner");b.className="banner"+(kind?" on "+kind:"");b.innerHTML=html||""}
+async function load(){
+  $("#sync").textContent="syncing…";
+  try{
+    
+    const r=await fetch("data.json",{cache:"no-store"});
+    if(r.status===404){state="expired";banner("exp","Session expired: reopen the full dashboard link from Hive Mind.");showCached();return}
+    if(!r.ok)throw new Error("HTTP "+r.status);
+    const ct=r.headers.get("content-type")||"";if(!ct.includes("json"))throw new Error("tunnel page");
+    DATA=await r.json();state="live";lastOk=Date.now();
+    try{localStorage.setItem(LAST,JSON.stringify({at:lastOk,d:DATA}))}catch(e){}
+    banner("");render();
+  }catch(e){state="offline";showCached();
+    banner("off","Offline: the box or tunnel is asleep. Showing last good data"+(lastOk?" from "+fmtAgo(lastOk):"")+". Retrying every 45 s.")}
+  stamp();
+}
+function showCached(){if(DATA){render();return}try{const c=JSON.parse(localStorage.getItem(LAST)||"null");if(c){DATA=c.d;lastOk=c.at;render()}}catch(e){}}
+function fmtAgo(t){const m=Math.round((Date.now()-t)/60000);return m<1?"just now":m<60?m+" min ago":Math.round(m/60)+" h ago"}
+function stamp(){const g=DATA&&DATA.generated;$("#sync").textContent=(state==="live"?"LIVE · ":state==="offline"?"OFFLINE · ":state==="expired"?"EXPIRED · ":"")+(g?g.replace(/^\d{4}-/,""):D)}
+/* ---- charts (inline SVG) ---- */
+function line(pts,{h=150,base=null,marks=[]}={}){
+  const P=pts.filter(p=>num(p.v)!=null);if(P.length<2)return '<div class="empty">Not enough points yet.</div>';
+  const W=600,pad=28,vs=P.map(p=>p.v).concat(base!=null?[base]:[]);let lo=Math.min(...vs),hi=Math.max(...vs);if(hi===lo){hi+=1;lo-=1}
+  const x=i=>pad+(W-pad-6)*i/(P.length-1),y=v=>8+(h-26)*(1-(v-lo)/(hi-lo));
+  const d=P.map((p,i)=>(i?"L":"M")+x(i).toFixed(1)+" "+y(p.v).toFixed(1)).join("");
+  const last=P[P.length-1].v,col=base!=null&&last<base?"var(--rd)":"var(--cy)";
+  let s=`<svg viewBox="0 0 ${W} ${h}" preserveAspectRatio="none" role="img" aria-label="Chart from ${P[0].v} to ${last}">`;
+  if(base!=null)s+=`<line x1="${pad}" x2="${W}" y1="${y(base)}" y2="${y(base)}" stroke="var(--line2)" stroke-dasharray="3 4"/>`;
+  s+=`<path d="${d}L${x(P.length-1)} ${h-18}L${pad} ${h-18}Z" fill="${col}" opacity=".08"/><path d="${d}" fill="none" stroke="${col}" stroke-width="1.8" vector-effect="non-scaling-stroke"/>`;
+  marks.forEach(m=>{const i=P.findIndex(p=>p.t>=m.t);if(i>=0)s+=`<circle cx="${x(i)}" cy="${y(P[i].v)}" r="3.5" fill="${m.c}"><title>${esc(m.l)}</title></circle>`});
+  s+=`<text class="ax" x="2" y="${y(hi)+4}">${hi.toFixed(0)}</text><text class="ax" x="2" y="${y(lo)}">${lo.toFixed(0)}</text>`;
+  s+=`<text class="ax" x="${pad}" y="${h-4}">${esc(P[0].t)}</text><text class="ax" x="${W-6}" y="${h-4}" text-anchor="end">${esc(P[P.length-1].t)}</text></svg>`;
+  return '<div class="chart card">'+s+'</div>';
+}
+const table=(cols,rows,opt={})=>rows&&rows.length?`<div class="tw"><table><thead><tr>${cols.map(c=>`<th>${c[0]}</th>`).join("")}</tr></thead><tbody>${rows.map((r,i)=>`<tr${opt.click?` class="click" tabindex="0" data-i="${i}"`:""}>${cols.map(c=>`<td${c[2]?` class="${c[2]}"`:""}>${c[1](r)}</td>`).join("")}</tr>`).join("")}</tbody></table></div>`:'<div class="empty card">No rows yet.</div>';
+const stat=(l,v,c="")=>`<div class="stat"><div class="l">${l}</div><div class="v ${c}">${v}</div></div>`;
+/* ---- bots ---- */
+function bots(d){
+  const n=d.nodes||{},dt=d.dots||{};
+  const g=dt.grok||{};
+  return [
+    {id:"hive",name:"Hive Mind",role:"CEO · orchestrator",st:(n.hive||{}).state,line:(n.hive||{}).line,last:(n.hive||{}).last,go:"box"},
+    {id:"kalshi",name:"Kalshi Trader",role:"BTC + weather",st:(n.kalshi||{}).state,line:(n.kalshi||{}).line,last:(n.kalshi||{}).last,go:"kalshi"},
+    {id:"oracle",name:"The Oracle",role:"research",st:(n.oracle||{}).state,line:(n.oracle||{}).line,last:(n.oracle||{}).last,go:"oracle"},
+    {id:"risk",name:"Risk Manager",role:"rules + limits",st:(n.risk||{}).state,line:(n.risk||{}).line,last:(n.risk||{}).last,go:"risk"},
+    {id:"wst",name:"WallStreet Trader",role:"$1K paper mirror",st:(n.wst||{}).state,line:(n.wst||{}).line,last:(n.wst||{}).last,go:"wst"},
+    {id:"grok",name:"Grok Bot",role:"overflow",st:g.dot==="green"?"active":g.dot==="red"?"error":g.dot?"idle":"unknown",line:g.last?"store updated "+g.last:null,last:g.last,go:"box"}
+  ];
+}
+function netmap(B){
+  const W=360,H=300,cx=180,cy=150,R=112,out=B.slice(1);
+  let s=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Bot network: Hive Mind at the center with five bots">`;
+  out.forEach((b,i)=>{const a=-Math.PI/2+i*2*Math.PI/out.length;b.x=cx+R*1.25*Math.cos(a);b.y=cy+R*Math.sin(a);
+    s+=`<line class="link ${b.st==="active"?"active":""}" x1="${cx}" y1="${cy}" x2="${b.x}" y2="${b.y}"/>`});
+  const hb=B[0];
+  s+=`<g class="node hub" data-go="${hb.go}" tabindex="0" role="link" aria-label="Hive Mind, ${esc(hb.st)}"><circle class="ring" cx="${cx}" cy="${cy}" r="38"/><circle cx="${cx}" cy="${cy}" r="31" fill="var(--bg3)" stroke="var(--line2)"/>
+    <text x="${cx}" y="${cy-2}" text-anchor="middle" font-size="12" font-weight="700" fill="var(--cy)">HIVE</text><text x="${cx}" y="${cy+12}" text-anchor="middle" font-size="10" class="sub">MIND</text>
+    <circle cx="${cx+27}" cy="${cy-27}" r="5" class="s-${esc(hb.st)}" fill="var(--c,var(--tx3))"/></g>`;
+  out.forEach(b=>{const w=112,h=40,x=Math.max(2,Math.min(W-w-2,b.x-w/2)),y=b.y-h/2;
+    s+=`<g class="node" data-go="${b.go}" tabindex="0" role="link" aria-label="${b.name}, ${esc(b.st)}"><rect x="${x}" y="${y}" width="${w}" height="${h}" rx="5"/>
+    <circle cx="${x+11}" cy="${y+13}" r="4" class="s-${esc(b.st)}" fill="var(--c,var(--tx3))"/>
+    <text x="${x+21}" y="${y+17}" font-size="11" font-weight="600">${b.name}</text><text x="${x+11}" y="${y+31}" class="sub">${esc(b.st)}</text></g>`});
+  return s+"</svg>";
+}
+/* ---- views ---- */
+function kpis(d){
+  const w=d.wst||{},L=w.latest||{},tp=d.tp||{},k=d.kalshi||{};
+  const prog=tp.start_of_day&&tp.now!=null?Math.max(0,Math.min(1,(tp.now-tp.start_of_day)/(tp.trigger-tp.start_of_day))):null;
+  const kd=num(k.balance)!=null?k.balance-100:null;
+  const openN=(w.open||[]).length+(num(k.open)||0);
+  $("#kpis").innerHTML=
+   `<div class="k hold"><span class="dot s-idle"></span><div><div class="l">Real money</div><div class="v">ON HOLD${d.real_money&&!/hold/i.test(d.real_money)?" · "+esc(d.real_money):""}</div><div class="s">${esc(d.real_money)}</div></div></div>
+    <div class="k"><div class="l">WST equity</div><div class="v num">${usd(L.account_value)}</div><div class="s ${cls(L.total_return_pct)}">${pct(L.total_return_pct)} all-time</div></div>
+    <div class="k"><div class="l">WST today</div><div class="v num ${cls(w.today_pnl)}">${usd(w.today_pnl,1)}</div><div class="s">paper</div></div>
+    <div class="k"><div class="l">To +30% TP</div><div class="v num">${prog==null?D:(prog*100).toFixed(0)+"%"}</div><div class="bar"><i style="transform:scaleX(${prog||0})"></i></div><div class="s">trigger ${usd(tp.trigger)}</div></div>
+    <div class="k"><div class="l">Kalshi vs $100</div><div class="v num ${cls(kd)}">${usd(k.balance)}</div><div class="s ${cls(kd)}">${usd(kd,1)}</div></div>
+    <div class="k"><div class="l">Open positions</div><div class="v num">${d.wst||d.kalshi?openN:D}</div><div class="s">WST ${(w.open||[]).length} · Kalshi ${esc(k.open)}</div></div>`;
+}
+function vOverview(d){
+  const B=bots(d),P=(d.pending||{}).items||[],h=d.hb24||{};
+  return `<div class="grid two"><div>
+   <h2>Bot network <small>tap a bot</small></h2><div class="net card">${netmap(B)}</div>
+   <div class="botlist">${B.map(b=>`<button class="bot" data-go="${b.go}"><span class="dot s-${esc(b.st)}"></span><div><div class="n">${b.name} <span class="pill s-${esc(b.st)}">${esc(b.st)}</span></div><div class="t">${esc(b.line)}</div></div><span class="go">›</span></button>`).join("")}</div>
+   </div><div>
+   <h2>Waiting on John <small>${P.length} · ${esc((d.pending||{}).updated)}</small></h2>
+   <div class="list">${P.length?P.map(p=>`<div class="item"><div class="f">${esc(p.from)}</div><b>${esc(p.title)}</b><p>${esc(p.detail)}</p></div>`).join(""):'<div class="empty card">Nothing pending.</div>'}</div>
+   <h2>Box heartbeat · 24 h <small>${h.gaps?h.gaps.length+" freezes":D}</small></h2>${hbTimeline(h)}
+   <h2>This week</h2>${calendar(d.calendar)}
+  </div></div>`;
+}
+function hbTimeline(h){
+  if(!h||!h.from)return '<div class="empty card">No heartbeat data.</div>';
+  const span=h.to-h.from,f=t=>new Date(t*1000).toLocaleTimeString("en-US",{timeZone:"America/New_York",hour:"numeric",minute:"2-digit"});
+  return `<div class="card"><div class="timeline" role="img" aria-label="${h.gaps.length} freezes in the last 24 hours">${h.gaps.map(g=>`<i style="left:${((g.t0-h.from)/span*100).toFixed(2)}%;width:${(g.s/span*100).toFixed(2)}%" title="${esc(g.start)} → ${esc(g.end)}"></i>`).join("")}</div>
+   <div class="tlax"><span>${f(h.from)} ET</span><span>${f(h.from+span/2)}</span><span>now</span></div>
+   <div class="stats" style="margin-top:8px">${stat("Beats",h.beats)}${stat("Freezes",h.gaps.length,h.gaps.length?"dn":"")}${stat("Down",h.downtime_s!=null?(h.downtime_s/3600).toFixed(1)+" h":D)}${stat("Last beat",esc((h.last||"").replace(/^\d{4}-\d\d-\d\d /,"")))}</div></div>`;
+}
+const calendar=c=>c&&c.length?`<div class="grid">${c.map((x,i)=>`<details class="card day"${i<2?" open":""}><summary>${esc(x.title)}</summary><ul>${x.items.map(i=>`<li>${esc(i)}</li>`).join("")}</ul></details>`).join("")}</div>`:'<div class="empty card">No calendar file.</div>';
+function vWst(d){
+  const w=d.wst||{},T=w.trades||[],E=(w.equity||[]).map(e=>({t:e.timestamp_et,v:e.account_value}));
+  const marks=[];T.forEach(t=>{if(t.entry_time_et)marks.push({t:t.entry_time_et,c:"var(--cy)",l:"Entry "+t.contract});if(t.exit_time)marks.push({t:t.exit_time,c:"var(--mg)",l:"Exit "+t.contract})});
+  const by=Object.entries(w.by_type||{}),open=T.filter(t=>t.status==="open"),closed=T.filter(t=>t.status!=="open");
+  const tc=[["Contract",t=>esc(t.contract)],["Entry",t=>esc(t.entry_time_et)],["Matty",t=>esc(t.matty_entry)],["Our fill",t=>esc(t.our_fill)],["Slip",t=>`<span class="${cls(-t.slip_pct)}">${t.slip_pct==null?D:t.slip_pct+"%"}</span>`],["Exit",t=>esc(t.exit_price_num)],["Exit why",t=>esc(t.exit_event)],["P&L",t=>`<span class="${cls(t.realized_pnl_usd)}">${usd(t.realized_pnl_usd,1)}</span>`],["Peak",t=>esc(t.peak_seen)],["Left on table",t=>usd(t.left_on_table_usd)]];
+  const L=w.latest||{};
+  return `<h2>WallStreet Trader · $1K paper <small>updated ${esc(w.updated)}</small></h2>
+  <div class="stats">${stat("Equity",usd(L.account_value))}${stat("Return",pct(L.total_return_pct),cls(L.total_return_pct))}${stat("W / L",(L.wins??D)+" / "+(L.losses??D))}${stat("Live account",esc(w.live_account))}</div>
+  <h2>Equity curve <small>cyan entry · pink exit · dashed $1,000</small></h2>${line(E,{base:1000,marks})}
+  <h2>Open trades</h2>${table(tc,open)}
+  <h2>Closed trades</h2>${table(tc,closed)}
+  <h2>Matty vs mirror</h2>${table([["Type",r=>esc(r[0])],["Trades",r=>r[1].n],["Win rate",r=>r[1].win_rate==null?D:r[1].win_rate+"%"],["P&L",r=>`<span class="${cls(r[1].pnl)}">${usd(r[1].pnl,1)}</span>`],["Avg slip",r=>r[1].avg_slip_pct==null?D:r[1].avg_slip_pct+"%"]],by)}
+  <div class="stats" style="margin-top:8px">${stat("Total slip $",usd(T.reduce((a,t)=>a+(num(t.slip_usd)||0),0),1))}${stat("Left on table",usd(T.reduce((a,t)=>a+(num(t.left_on_table_usd)||0),0)))}${stat("Reviews",esc((d.journal_counts||{}).reviews))}${stat("Alerts",esc((d.journal_counts||{}).alerts))}</div>
+  <h2>Current rules</h2><div class="card" style="padding:0">${(d.rules||[]).filter(r=>r.src==="account.md"||r.src==="brief").map(r=>`<div class="rule"><b>${esc(r.name)}</b>${esc(r.text)}</div>`).join("")||'<div class="empty">—</div>'}</div>
+  <details class="card" style="margin-top:10px"><summary>Daily verdict (verdict.md)</summary><pre class="md">${esc(w.verdict_md)}</pre></details>
+  <details class="card" style="margin-top:6px"><summary>Prior shadow log</summary>${table([["Entry",r=>esc(r.entry_time_et)],["Contract",r=>esc(r.contract)],["Matty",r=>esc(r.matty_entry)],["Exit",r=>esc(r.exit_reason)],["P&L",r=>usd(r.pnl_usd,1)]],w.prior_log)}</details>`;
+}
+function vKalshi(d){
+  const k=d.kalshi||{},x=d.kx||{},w=k.weather||{},dot=d.dots||{};
+  const C=(x.curve||[]).map(p=>({t:p.t==="start"?"start":p.t.slice(5,16),v:p.v}));
+  return `<h2>Kalshi Trader <small>goal ${usd(k.goal)} by ${esc(k.goal_date)}</small></h2>
+  <div class="stats">${stat("Balance",usd(k.balance),cls(k.balance-100))}${stat("W / L",(k.wins??D)+" / "+(k.losses??D))}${stat("Open",esc(k.open))}${stat("Attempts today",esc(k.attempts_today))}</div>
+  <h2>Balance curve <small>dashed $100 start</small></h2>${line(C,{base:100})}
+  <div class="grid two" style="margin-top:10px">
+   <div class="card"><b>BTC bot</b> <span class="pill s-${esc((dot.kalshi||{}).dot)}">${k.pid?"running":"down"}</span><div class="muted mono" style="font-size:12px;margin-top:4px">log ${esc(k.log_time)}</div><div class="muted" style="font-size:13px;margin-top:4px">${esc(k.calibration_head)}</div>
+    <div style="margin-top:6px;font:12px var(--mono);color:var(--tx2)">${(k.last_notrade||[]).map(n=>`${esc(n.time.slice(11,19))} ${esc(n.reason)}`).join("<br>")||D}</div></div>
+   <div class="card"><b>Weather bot</b> <span class="pill s-${esc((dot.weather||{}).dot)}">${w.pid?"running":"down"}</span><div class="muted mono" style="font-size:12px;margin-top:4px">log ${esc(w.log_time)}</div>
+    <div class="stats" style="margin-top:8px">${stat("Decisions",esc(w.decisions))}${stat("Orders",esc(w.orders))}${stat("Fills",esc(w.fills))}${stat("Cap hits",esc(x.cap_hits))}</div>
+    <div style="margin-top:6px;font:12px var(--mono);color:var(--tx2)">${Object.entries(x.by_city||{}).map(([c,v])=>`${esc(c)}: ${v.orders} orders, ${v.filled} filled`).join(" · ")||D}</div></div>
+  </div>
+  <h2>BTC orders</h2>${table([["Time",r=>esc(r.time)],["Ticker",r=>esc(r.ticker)],["Side",r=>esc(r.side)],["Px",r=>esc(r.price)],["Size",r=>esc(r.size)],["Status",r=>esc(r.status)],["P&L",r=>`<span class="${cls(r.pnl)}">${usd(r.pnl,1)}</span>`],["Why",r=>esc(r.reasoning),"w"]],[...(x.btc||[])].reverse())}
+  <h2>Weather orders</h2>${table([["Time",r=>esc(r.time)],["Ticker",r=>esc(r.ticker)],["Side",r=>esc(r.side)],["Px",r=>esc(r.price)],["Status",r=>esc(r.status)],["Filled",r=>esc(r.filled)],["Note",r=>esc(r.cancel_reason),"w"]],[...(x.weather_orders||[])].reverse())}
+  <h2>Weather fills</h2>${table([["Time",r=>esc(r.time)],["Order",r=>esc(r.order_id)],["Qty",r=>esc(r.qty)]],x.fills)}
+  <h2>Blocked quotes <small>${esc(k.blocked_total)} total</small></h2>${table([["Rule",r=>esc(r.rule)],["Count",r=>r.n],["Resolved",r=>r.resolved],["Would-be P&L",r=>`<span class="${cls(r.cf_pnl)}">${usd(r.cf_pnl,1)}</span>`]],k.blocked)}`;
+}
+let oFilter="all";
+function vOracle(d){
+  const o=d.oracle||{},t=o.tally||{},B=d.oracle_board||[];
+  const kind=s=>/rejected/i.test(s)&&!/open/i.test(s)?"rejected":/candidate|promot|pass|alive|live/i.test(s)?"alive":"open";
+  const rows=B.filter(r=>oFilter==="all"||kind(r.status)===oFilter);
+  return `<h2>The Oracle · research board <small>updated ${esc(o.updated)}</small></h2>
+  <div class="stats">${stat("Logged",esc(t.logged))}${stat("Rejected",esc(t.rejected))}${stat("Alive / passed",esc(t.passed_or_alive),"up")}${stat("EF folders",esc((d.oracle_misc||{}).ef_folders))}</div>
+  <div class="filters" style="margin-top:10px" role="group" aria-label="Filter ideas">${["all","alive","open","rejected"].map(f=>`<button class="chip" data-of="${f}" aria-pressed="${oFilter===f}">${f}</button>`).join("")}</div>
+  ${table([["ID",r=>esc(r.id)],["Date",r=>esc(r.date)],["Status",r=>`<span class="pill ${kind(r.status)==="alive"?"s-active":kind(r.status)==="rejected"?"s-error":"s-idle"}">${esc(r.status).slice(0,28)}</span>`],["Idea",r=>esc(r.idea),"w"],["Result",r=>esc(r.result),"w"]],rows)}`;
+}
+function vRisk(d){
+  const r=d.risk||{},R=(d.rules||[]),grp={};R.forEach(x=>(grp[x.src]=grp[x.src]||[]).push(x));
+  return `<h2>Risk Manager <small>updated ${esc(r.updated)}</small></h2>
+  <div class="list">${(r.docs||[]).map(x=>`<div class="item" style="border-left-color:${x.pending?"var(--am)":"var(--gn)"}"><div class="f">${esc(x.file)} · ${x.pending?"pending John":"in force"}</div><p>${esc(x.title)}</p></div>`).join("")||'<div class="empty card">No risk docs.</div>'}</div>
+  ${Object.entries(grp).map(([s,L])=>`<h2>${esc(s)} <small>${L.length} rules</small></h2><div class="card" style="padding:0">${L.map(x=>`<div class="rule">${x.src==="account.md"||x.src==="brief"?`<b>${esc(x.name)}</b>`:""}${esc(x.text)}</div>`).join("")}</div>`).join("")}`;
+}
+let fSrc="all",fSt="all";
+function feed(d){
+  const out=[];
+  ((d.wst||{}).trades||[]).forEach(t=>out.push({src:"WST",time:t.entry_time_et,what:t.contract,side:t.side,px:t.our_fill,status:t.status,pnl:t.realized_pnl_usd,note:t.status_reason,ev:t.events}));
+  ((d.kx||{}).btc||[]).forEach(t=>out.push({src:"Kalshi BTC",time:(t.time||"").slice(0,16),what:t.ticker,side:t.side,px:t.price,status:t.status,pnl:num(t.pnl),note:t.reasoning}));
+  ((d.kx||{}).weather_orders||[]).forEach(t=>out.push({src:"Weather",time:(t.time||"").slice(0,16),what:t.ticker,side:t.side,px:t.price,status:t.status,pnl:num(t.pnl),note:t.cancel_reason}));
+  return out.sort((a,b)=>(b.time||"").localeCompare(a.time||""));
+}
+function vFeed(d){
+  const F=feed(d),st=[...new Set(F.map(f=>f.status).filter(Boolean))];
+  const rows=F.filter(f=>(fSrc==="all"||f.src===fSrc)&&(fSt==="all"||f.status===fSt));
+  return `<h2>Trade feed <small>${rows.length} of ${F.length} · tap a row</small></h2>
+  <div class="filters" role="group" aria-label="Source">${["all","WST","Kalshi BTC","Weather"].map(f=>`<button class="chip" data-fs="${f}" aria-pressed="${fSrc===f}">${f}</button>`).join("")}</div>
+  <div class="filters" role="group" aria-label="Status">${["all",...st].map(f=>`<button class="chip" data-ft="${esc(f)}" aria-pressed="${fSt===f}">${esc(f)}</button>`).join("")}</div>
+  ${table([["Time",r=>esc(r.time)],["Bot",r=>esc(r.src)],["Market",r=>esc(r.what)],["Side",r=>esc(r.side)],["Px",r=>esc(r.px)],["Status",r=>esc(r.status)],["P&L",r=>`<span class="${cls(r.pnl)}">${usd(r.pnl,1)}</span>`]],rows,{click:1})}
+  <div id="fdetail"></div>`;
+  }
+function vBox(d){
+  const hb=(d.heartbeat||{}).last||{},fl=d.fleet_log||[];
+  return `<h2>Box health</h2>${hbTimeline(d.hb24)}
+  <div class="stats" style="margin-top:8px">${stat("Kalshi alive",hb.kalshi_alive==="1"?"yes":hb.kalshi_alive?"no":D,hb.kalshi_alive==="1"?"up":"dn")}${stat("Collector",hb.collector_alive==="1"?"yes":hb.collector_alive?"no":D,hb.collector_alive==="1"?"up":"dn")}${stat("Uptime",num(hb.uptime_s)!=null?(hb.uptime_s/3600).toFixed(1)+" h":D)}${stat("Missing files",(d.missing||[]).length,(d.missing||[]).length?"dn":"")}</div>
+  <h2>Hive Mind fleet log <small>latest 4</small></h2>${fl.map(s=>`<details class="card" style="margin-bottom:6px"><summary>${esc(s.title)}</summary><pre class="md">${esc(s.body)}</pre></details>`).join("")||'<div class="empty card">No log.</div>'}
+  <details class="card"><summary>Brain roster (brains.md)</summary><pre class="md">${esc(d.brains_md)}</pre></details>
+  ${(d.missing||[]).length?`<h2>Missing sources</h2><pre class="md card">${esc(d.missing.join("\n"))}</pre>`:""}
+  <p class="muted mono" style="font-size:12px;margin-top:18px">Old dashboard: <a href="classic">/classic</a></p>`;
+}
+const VIEWS={overview:vOverview,wst:vWst,kalshi:vKalshi,oracle:vOracle,risk:vRisk,feed:vFeed,box:vBox};
+function cur(){const h=location.hash.slice(1);return VIEWS[h]?h:"overview"}
+function render(){
+  if(!DATA)return;kpis(DATA);const v=cur();
+  for(const k in VIEWS){const el=$("#v-"+k);el.classList.toggle("on",k===v);if(k===v)el.innerHTML=VIEWS[k](DATA)}
+  document.querySelectorAll("nav.tabs a").forEach(a=>a.setAttribute("aria-current",a.dataset.v===v?"page":"false"));
+  stamp();
+}
+$("#tabs").innerHTML=TABS.map(([k,l],i)=>`<a href="#${k}" data-v="${k}">${l}</a>`).join("");
+addEventListener("hashchange",()=>{render();scrollTo(0,0)});
+document.addEventListener("click",e=>{
+  const g=e.target.closest("[data-go]");if(g){location.hash=g.dataset.go;return}
+  const c=e.target.closest("[data-of],[data-fs],[data-ft]");
+  if(c){if(c.dataset.of)oFilter=c.dataset.of;if(c.dataset.fs)fSrc=c.dataset.fs;if(c.dataset.ft)fSt=c.dataset.ft;render();return}
+  const r=e.target.closest("#v-feed tr.click");if(r)showRow(r);
+});
+document.addEventListener("keydown",e=>{
+  if(e.key==="Enter"){const g=e.target.closest&&e.target.closest("[data-go]");if(g){location.hash=g.dataset.go;return}const r=e.target.closest&&e.target.closest("#v-feed tr.click");if(r)showRow(r)}
+  if(e.target.tagName==="INPUT")return;
+  const i="1234567".indexOf(e.key);if(i>=0&&!e.metaKey&&!e.ctrlKey)location.hash=TABS[i][0];
+  if(e.key==="r"&&!e.metaKey&&!e.ctrlKey)load();
+});
+function showRow(r){
+  const F=feed(DATA).filter(f=>(fSrc==="all"||f.src===fSrc)&&(fSt==="all"||f.status===fSt)),f=F[+r.dataset.i];if(!f)return;
+  const el=$("#fdetail");el.innerHTML=`<h2>${esc(f.src)} · ${esc(f.what)}</h2><div class="card"><p style="margin:0 0 8px;color:var(--tx2)">${esc(f.note)}</p>${f.ev?table([["Time",e=>esc(e.event_time_et)],["Event",e=>esc(e.event)],["Px",e=>esc(e.event_price)],["Closed",e=>esc(e.contracts_closed)],["P&L",e=>usd(e.realized_pnl_usd,1)]],f.ev):""}</div>`;
+  el.scrollIntoView({block:"nearest"});
+}
+$("#refresh").addEventListener("click",load);
+let timer=setInterval(load,45000);
+document.addEventListener("visibilitychange",()=>{clearInterval(timer);if(!document.hidden){load();timer=setInterval(load,45000)}});
+showCached();load();
+})();
+</script>
+</body>
+</html>
