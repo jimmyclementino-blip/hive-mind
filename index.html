@@ -117,6 +117,44 @@ details summary{cursor:pointer;min-height:44px;display:flex;align-items:center;f
 nav.tabs{position:fixed;left:0;right:0;bottom:0;z-index:30;display:flex;background:oklch(0.13 0.02 255 / .97);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom);overflow-x:auto}
 nav.tabs a{flex:1 0 auto;min-width:56px;min-height:56px;display:flex;align-items:center;justify-content:center;font:11px var(--mono);letter-spacing:.06em;color:var(--tx3);text-decoration:none;text-transform:uppercase;padding:0 8px;touch-action:manipulation}
 nav.tabs a[aria-current=page]{color:var(--cy);box-shadow:inset 0 2px 0 var(--cy)}
+
+/* decisions v2 */
+.dsum{display:flex;gap:6px;flex-wrap:wrap;font:12px var(--mono);color:var(--tx2);margin-bottom:8px}
+.dsum b{font-weight:600}.dsum .hi{color:var(--rd)}.dsum .me{color:var(--am)}.dsum .lo{color:var(--cy)}
+.prog{display:flex;align-items:center;gap:10px;font:12px var(--mono);color:var(--tx2);margin:4px 0 10px}
+.prog .bar{flex:1;margin:0;height:6px}.prog .bar i{background:var(--gn)}
+.dc{background:var(--bg2);border:1px solid var(--line);border-left:3px solid var(--pc);border-radius:var(--r);overflow:hidden;animation:din .35s var(--ease) both;transition:opacity .25s ease,border-color .15s ease}
+.dc.p-high{--pc:var(--rd)}.dc.p-med{--pc:var(--am)}.dc.p-low{--pc:var(--cy)}
+.dc.done{opacity:.5}.dc.done .dt{text-decoration:line-through}
+.dh{display:flex;gap:10px;align-items:flex-start;width:100%;background:none;border:0;text-align:left;padding:11px 12px;cursor:pointer;min-height:52px}
+.dh>div{flex:1;min-width:0}.dt{font-weight:600;display:block}
+.dm{display:flex;gap:6px;flex-wrap:wrap;margin-top:5px;align-items:center}
+.pp{font:10px var(--mono);text-transform:uppercase;letter-spacing:.08em;padding:2px 7px;border-radius:99px;background:color-mix(in oklch,var(--pc) 18%,transparent);color:var(--pc)}
+.age{font:11px var(--mono);color:var(--tx3)}
+.chev{font-family:var(--mono);color:var(--tx3);transition:transform .25s var(--ease)}
+.dc.open .chev{transform:rotate(90deg)}
+.db{display:grid;grid-template-rows:0fr;transition:grid-template-rows .3s var(--ease)}
+.dc.open .db{grid-template-rows:1fr}.db>div{overflow:hidden}
+.dbi{padding:0 12px 12px}
+.why{color:var(--tx2);font-size:14px;margin:0 0 8px}
+.opt{display:flex;align-items:center;gap:8px;justify-content:space-between;padding:7px 9px;border:1px solid var(--line);border-radius:var(--r);margin-top:6px;font-size:14px}
+.opt.rec{border-color:var(--gn);background:oklch(0.83 0.17 150 / .08)}
+.opt .rt{font:10px var(--mono);color:var(--gn);text-transform:uppercase;letter-spacing:.08em;margin-left:6px}
+.btn{background:var(--bg3);border:1px solid var(--line2);border-radius:var(--r);min-height:36px;padding:0 10px;cursor:pointer;font:12px var(--mono);white-space:nowrap;transition:transform .15s var(--ease),border-color .15s ease}
+.btn:active{transform:scale(.96)}.btn.ok{border-color:var(--gn);color:var(--gn)}
+.dact{display:flex;justify-content:flex-end;margin-top:10px}
+.steps{list-style:none;margin:0;padding:0;counter-reset:s}
+.step{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border-bottom:1px solid var(--line);cursor:pointer;animation:din .35s var(--ease) both;min-height:48px}
+.step:last-child{border:0}
+.step .bx{flex:none;width:22px;height:22px;border:1.5px solid var(--line2);border-radius:5px;display:grid;place-items:center;font:12px var(--mono);color:var(--bg);transition:background .2s ease,border-color .2s ease,transform .2s var(--ease)}
+.step.done .bx{background:var(--gn);border-color:var(--gn);transform:scale(1.08)}
+.step .st{flex:1;font-size:14px;transition:color .2s ease}.step.done .st{color:var(--tx3);text-decoration:line-through}
+.step .rk{font:11px var(--mono);color:var(--cy);margin-right:4px}
+.who{font:10px var(--mono);color:var(--tx3);border:1px solid var(--line2);border-radius:99px;padding:1px 7px;white-space:nowrap}
+.toast{position:fixed;left:50%;bottom:calc(76px + env(safe-area-inset-bottom));transform:translate(-50%,20px);opacity:0;background:var(--bg3);border:1px solid var(--gn);color:var(--tx);padding:9px 14px;border-radius:99px;font:13px var(--mono);z-index:50;pointer-events:none;transition:opacity .25s ease,transform .3s var(--ease)}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+@keyframes din{from{opacity:0;transform:translateY(6px)}}
+@media (prefers-reduced-motion:reduce){.dc,.step{animation:none}.db,.chev{transition:none}}
 .empty{color:var(--tx3);font:13px var(--mono);padding:10px}
 @media (min-width:760px){
   .kpis{grid-template-columns:2fr repeat(5,1fr)}.k.hold{grid-column:auto}
@@ -138,7 +176,7 @@ nav.tabs a[aria-current=page]{color:var(--cy);box-shadow:inset 0 2px 0 var(--cy)
 </style>
 </head>
 <body>
-<div style="background:#223;color:#ccd;font:12px sans-serif;text-align:center;padding:4px">Static snapshot, updated every 15 min · last updated 2026-11-03 09:55 PM ET</div>
+<div style="background:#223;color:#ccd;font:12px sans-serif;text-align:center;padding:4px">Static snapshot, updated every 15 min · last updated 2026-11-03 09:58 PM ET</div>
 <header>
   <div class="brand">
     <div class="logo" aria-label="Hive Grid">HIVE<b>//</b>GRID</div>
@@ -259,8 +297,7 @@ function vOverview(d){
    <h2>Bot network <small>tap a bot</small></h2><div class="net card">${netmap(B)}</div>
    <div class="botlist">${B.map(b=>`<button class="bot" data-go="${b.go}"><span class="dot s-${esc(b.st)}"></span><div><div class="n">${b.name} <span class="pill s-${esc(b.st)}">${esc(b.st)}</span></div><div class="t">${esc(b.line)}</div></div><span class="go">›</span></button>`).join("")}</div>
    </div><div>
-   <h2>Waiting on John <small>${P.length} · ${esc((d.pending||{}).updated)}</small></h2>
-   <div class="list">${P.length?P.map(p=>`<div class="item"><div class="f">${esc(p.from)}</div><b>${esc(p.title)}</b><p>${esc(p.detail)}</p></div>`).join(""):'<div class="empty card">Nothing pending.</div>'}</div>
+   ${decisions(d)}
    <h2>Box heartbeat · 24 h <small>${h.gaps?h.gaps.length+" freezes":D}</small></h2>${hbTimeline(h)}
    <h2>This week</h2>${calendar(d.calendar)}
   </div></div>`;
@@ -307,6 +344,51 @@ function vKalshi(d){
   <h2>Weather orders</h2>${table([["Time",r=>esc(r.time)],["Ticker",r=>esc(r.ticker)],["Side",r=>esc(r.side)],["Px",r=>esc(r.price)],["Status",r=>esc(r.status)],["Filled",r=>esc(r.filled)],["Note",r=>esc(r.cancel_reason),"w"]],[...(x.weather_orders||[])].reverse())}
   <h2>Weather fills</h2>${table([["Time",r=>esc(r.time)],["Order",r=>esc(r.order_id)],["Qty",r=>esc(r.qty)]],x.fills)}
   <h2>Blocked quotes <small>${esc(k.blocked_total)} total</small></h2>${table([["Rule",r=>esc(r.rule)],["Count",r=>r.n],["Resolved",r=>r.resolved],["Would-be P&L",r=>`<span class="${cls(r.cf_pnl)}">${usd(r.cf_pnl,1)}</span>`]],k.blocked)}`;
+}
+
+/* ---- decisions v2 ---- */
+const DK="hive.dec.v2",SK="hive.steps.v2";let dPri="all",dBot="all",dShowDone=false,dOpen=new Set();
+const lsGet=k=>{try{return JSON.parse(localStorage.getItem(k)||"{}")}catch(e){return{}}},lsSet=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}};
+const PRI={high:0,med:1,low:2};
+function ago(s){const t=Date.parse(s);if(!t)return "";const m=Math.max(0,Math.round((Date.now()-t)/60000));return m<60?m+"m ago":m<2880?Math.round(m/60)+"h ago":Math.round(m/1440)+"d ago"}
+function decItems(d){return((d.pending||{}).items||[]).map((p,i)=>({id:p.id||"p"+i,n:p.n||i+1,title:p.title,why:p.why||p.detail||"",options:p.options||[],rec:p.recommended||"",from:p.from||"Hive Mind",raised:p.raised||"",pri:PRI[p.priority]!=null?p.priority:"med"})).sort((a,b)=>PRI[a.pri]-PRI[b.pri]||a.n-b.n)}
+function nextSteps(d,I,done){
+  const out=[],seen=t=>out.some(o=>o.text.slice(0,30)===t.slice(0,30));
+  ((d.pending||{}).next_steps||[]).forEach(s=>{const t=typeof s==="string"?s:s.text;if(t)out.push({text:t,who:s.who||""})});
+  const open=I.filter(x=>!done[x.id]),hi=open.filter(x=>x.pri==="high");
+  if(hi.length&&!out.some(o=>/HIGH/.test(o.text)))out.unshift({text:`Answer ${hi.length} high-priority decision${hi.length>1?"s":""}: ${hi.map(x=>"#"+x.n).join(", ")}.`,who:"John"});
+  const w=d.wst||{};if(num(w.today_pnl)!=null&&w.today_pnl<0&&!seen("Review"))out.push({text:`Review today's WST paper loss of ${usd(w.today_pnl,1)} with Risk Manager.`,who:"Risk Manager"});
+  if(open.length&&out.length<6)out.push({text:`Clear the ${open.length} open decision${open.length>1?"s":""} below, oldest first.`,who:"John"});
+  return out.slice(0,6).map((o,i)=>({...o,id:"s"+i+":"+o.text.slice(0,24)}));
+}
+function decisions(d){
+  const I=decItems(d),done=lsGet(DK),sd=lsGet(SK),bots=[...new Set(I.map(x=>x.from))];
+  const cnt=p=>I.filter(x=>x.pri===p&&!done[x.id]).length,nd=I.filter(x=>done[x.id]).length;
+  const V=I.filter(x=>(dPri==="all"||x.pri===dPri)&&(dBot==="all"||x.from===dBot)&&(dShowDone||!done[x.id]));
+  const S=nextSteps(d,I,done),sdn=S.filter(s=>sd[s.id]).length;
+  return `<h2>Next steps to consider <small>${sdn} of ${S.length} done</small></h2>
+  <div class="card" style="padding:0"><ul class="steps">${S.map((s,i)=>`<li class="step${sd[s.id]?" done":""}" data-step="${esc(s.id)}" role="checkbox" aria-checked="${!!sd[s.id]}" tabindex="0" style="animation-delay:${i*40}ms"><span class="bx">${sd[s.id]?"✓":""}</span><span class="st"><span class="rk">${i+1}.</span>${esc(s.text)}</span>${s.who?`<span class="who">${esc(s.who)}</span>`:""}</li>`).join("")||'<li class="empty">Nothing to suggest.</li>'}</ul></div>
+  <h2 id="decisions">Decisions <small>${esc((d.pending||{}).updated)}</small></h2>
+  <div class="dsum"><span class="hi"><b>${cnt("high")}</b> high</span>·<span class="me"><b>${cnt("med")}</b> med</span>·<span class="lo"><b>${cnt("low")}</b> low</span><span class="muted">open</span></div>
+  <div class="prog"><span>${nd} of ${I.length} handled</span><div class="bar"><i style="transform:scaleX(${I.length?nd/I.length:0})"></i></div><button class="btn" data-dshow>${dShowDone?"Hide":"Show"} handled</button></div>
+  <div class="filters" role="group" aria-label="Priority">${["all","high","med","low"].map(f=>`<button class="chip" data-dp="${f}" aria-pressed="${dPri===f}">${f}</button>`).join("")}</div>
+  <div class="filters" role="group" aria-label="Bot">${["all",...bots].map(f=>`<button class="chip" data-db="${esc(f)}" aria-pressed="${dBot===f}">${esc(f)}</button>`).join("")}</div>
+  <div class="list">${V.map((x,i)=>`<div class="dc p-${x.pri}${done[x.id]?" done":""}${dOpen.has(x.id)?" open":""}" data-dec="${esc(x.id)}" style="animation-delay:${i*35}ms">
+   <button class="dh" data-dtog aria-expanded="${dOpen.has(x.id)}"><div><span class="dt">${x.n}. ${esc(x.title)}</span><span class="dm"><span class="pp">${x.pri}</span><span class="who">${esc(x.from)}</span><span class="age">${x.raised?"raised "+ago(x.raised):""}</span>${done[x.id]?'<span class="age up">handled</span>':""}</span></div><span class="chev">›</span></button>
+   <div class="db"><div><div class="dbi"><p class="why">${esc(x.why)}</p>
+    ${x.options.map(o=>`<div class="opt${o===x.rec?" rec":""}"><span>${esc(o)}${o===x.rec?'<span class="rt">recommended</span>':""}</span><button class="btn" data-copy="${esc(`Decision ${x.n}: ${o.toLowerCase()}`)}">Copy my answer</button></div>`).join("")}
+    <div class="dact"><button class="btn${done[x.id]?" ok":""}" data-done>${done[x.id]?"✓ Handled · undo":"Mark as handled"}</button></div></div></div></div></div>`).join("")||'<div class="empty card">No decisions match.</div>'}</div>`;
+}
+function toast(m){let t=$("#toast");if(!t){t=document.createElement("div");t.id="toast";t.className="toast";t.setAttribute("role","status");document.body.appendChild(t)}t.textContent=m;t.classList.add("on");clearTimeout(t._h);t._h=setTimeout(()=>t.classList.remove("on"),2200)}
+async function copyTxt(s){try{await navigator.clipboard.writeText(s)}catch(e){const a=document.createElement("textarea");a.value=s;document.body.appendChild(a);a.select();try{document.execCommand("copy")}catch(_){}a.remove()}}
+function decClick(e){
+  const cp=e.target.closest("[data-copy]");if(cp){copyTxt(cp.dataset.copy);cp.classList.add("ok");toast("Copied, paste it to Hive Mind");return true}
+  const st=e.target.closest("[data-step]");if(st){const s=lsGet(SK);s[st.dataset.step]=!s[st.dataset.step];lsSet(SK,s);render();return true}
+  const c=e.target.closest("[data-dec]");
+  if(c&&e.target.closest("[data-done]")){const s=lsGet(DK),id=c.dataset.dec;s[id]=!s[id];lsSet(DK,s);if(s[id])dOpen.delete(id);render();return true}
+  if(c&&e.target.closest("[data-dtog]")){const id=c.dataset.dec;dOpen.has(id)?dOpen.delete(id):dOpen.add(id);c.classList.toggle("open");e.target.closest("[data-dtog]").setAttribute("aria-expanded",dOpen.has(id));return true}
+  const f=e.target.closest("[data-dp],[data-db],[data-dshow]");if(f){if(f.dataset.dp)dPri=f.dataset.dp;if(f.dataset.db)dBot=f.dataset.db;if(f.hasAttribute("data-dshow"))dShowDone=!dShowDone;render();return true}
+  return false;
 }
 let oFilter="all";
 function vOracle(d){
@@ -361,12 +443,14 @@ function render(){
 $("#tabs").innerHTML=TABS.map(([k,l],i)=>`<a href="#${k}" data-v="${k}">${l}</a>`).join("");
 addEventListener("hashchange",()=>{render();scrollTo(0,0)});
 document.addEventListener("click",e=>{
+  if(decClick(e))return;
   const g=e.target.closest("[data-go]");if(g){location.hash=g.dataset.go;return}
   const c=e.target.closest("[data-of],[data-fs],[data-ft]");
   if(c){if(c.dataset.of)oFilter=c.dataset.of;if(c.dataset.fs)fSrc=c.dataset.fs;if(c.dataset.ft)fSt=c.dataset.ft;render();return}
   const r=e.target.closest("#v-feed tr.click");if(r)showRow(r);
 });
 document.addEventListener("keydown",e=>{
+  if((e.key==="Enter"||e.key===" ")&&e.target.closest&&e.target.closest("[data-step]")){e.preventDefault();decClick(e);return}
   if(e.key==="Enter"){const g=e.target.closest&&e.target.closest("[data-go]");if(g){location.hash=g.dataset.go;return}const r=e.target.closest&&e.target.closest("#v-feed tr.click");if(r)showRow(r)}
   if(e.target.tagName==="INPUT")return;
   const i="1234567".indexOf(e.key);if(i>=0&&!e.metaKey&&!e.ctrlKey)location.hash=TABS[i][0];
